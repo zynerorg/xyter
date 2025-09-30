@@ -2,7 +2,6 @@ package database
 
 import (
 	"time"
-	"net/url"
 
 	"github.com/knadh/koanf/v2"
 	"gorm.io/driver/postgres"
@@ -144,13 +143,7 @@ type Cooldown struct {
 }
 
 func Open(k *koanf.Koanf) *gorm.DB {
-	u := &url.URL{
-		Scheme: "postgres",
-		User:   url.UserPassword(k.String("database/user"), k.String("database/password")),
-		Host:   k.String("database/host"),
-		Path:   k.String("database/name"),
-	}
-	db, err := gorm.Open(postgres.Open(u.String()), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(k.String("database/url")), &gorm.Config{});
 	if err != nil {
 		panic("failed to connect database")
 	}
