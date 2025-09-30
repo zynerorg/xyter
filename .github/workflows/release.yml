@@ -29,11 +29,11 @@ jobs:
           mkdir build/tarball/usr -p
           cp -r build/bin/ build/tarball/usr/bin/
 
-      - name: Upload tarball artifact
-        uses: actions/upload-artifact@v4
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
         with:
-          name: xyter.tar.gz
-          path: build/tarball
+          files: build/tarball/**
   docker:
     runs-on: ubuntu-latest
     steps:
