@@ -74,7 +74,7 @@ func BonusDailyHandler(s *discordgo.Session, i *discordgo.InteractionCreate, k *
 	var cooldown database.Cooldown
 	err := db.First(&cooldown, "guild_id = ? AND user_id = ? AND cooldown_item = daily_bonus", guildID, userID).Error
 	log.Println(cooldown)
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Println("inside if")
 		err = utils.SendErrorEmbed(s, i, fmt.Sprintf("Sorry, but you're currently on cooldown. Please try again later.\n\nRemaining cooldown time: <t:%d:R>", cooldown.ExpiresAt.Unix()))
 		return err
