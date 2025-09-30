@@ -8,32 +8,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  # build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.24.6'
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         go-version: '1.24.6'
 
-      - name: Build binary
-        #When cli and api are added it will do the BuildAll target.
-        run: |
-          go run mage.go BuildBot
+  #     - name: Build binary
+  #       #When cli and api are added it will do the BuildAll target.
+  #       run: |
+  #         go run mage.go BuildBot
       
-      - name: Package tarball
-        run: |
-          mkdir build/tarball/usr -p
-          cp -r build/bin/ build/tarball/usr/bin/
+  #     - name: Package tarball
+  #       run: |
+  #         mkdir build/tarball/usr -p
+  #         cp -r build/bin/ build/tarball/usr/bin/
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
-        with:
-          files: build/tarball/**
+  #     - name: Release
+  #       uses: softprops/action-gh-release@v2
+  #       if: github.ref_type == 'tag'
+  #       with:
+  #         files: build/tarball/**
   docker:
     runs-on: ubuntu-latest
     steps:
