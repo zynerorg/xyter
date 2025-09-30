@@ -70,6 +70,8 @@ func Start(k *koanf.Koanf, db *gorm.DB) (*discordgo.Session, error) {
 	log.Println("Registering slash commands...")
 	for _, cmd := range commands.GetTopLevelCommands() {
 		_, err := s.ApplicationCommandCreate(k.String("bot/app-id"), k.String("bot/guild-id"), cmd)
+		_, err = s.ApplicationCommandCreate(k.String("bot/app-id"), "", cmd)
+
 		if err != nil {
 			log.Printf("Error creating command %q: %v", cmd.Name, err)
 		}
