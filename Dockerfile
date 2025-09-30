@@ -18,7 +18,7 @@ COPY --chown=builder:builder ./ ./
 #TEMP! When cli and api is added, this will change to BuildAll!
 RUN go run mage.go BuildBot
 
-FROM scratch AS runner
+FROM alpine AS runner
 
 WORKDIR /app
 COPY --from=builder --chown=100:100 /home/builder/app/build/bin/* ./
