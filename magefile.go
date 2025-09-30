@@ -52,10 +52,10 @@ func CheckRoot() error {
 func BuildAPI() error {
 	CheckRoot()
 	fmt.Println("Building API...")
-	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-api"), "./cmd/xyter-api");
+	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-api"), "./cmd/xyter-api")
 	cmd.Env = append(os.Environ(),
-	  "CGO_ENABLED=0",
-        )
+		"CGO_ENABLED=0",
+	)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -65,10 +65,10 @@ func BuildAPI() error {
 func BuildCLI() error {
 	CheckRoot()
 	fmt.Println("Building CLI...")
-	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-cli"), "./cmd/xyter-cli");
+	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-cli"), "./cmd/xyter-cli")
 	cmd.Env = append(os.Environ(),
-	  "CGO_ENABLED=0",
-        )
+		"CGO_ENABLED=0",
+	)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -78,10 +78,10 @@ func BuildCLI() error {
 func BuildBot() error {
 	CheckRoot()
 	fmt.Println("Building Discord Bot...")
-	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-bot"), "./cmd/xyter-bot");
+	cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "xyter-bot"), "./cmd/xyter-bot")
 	cmd.Env = append(os.Environ(),
-	  "CGO_ENABLED=0",
-        )
+		"CGO_ENABLED=0",
+	)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
