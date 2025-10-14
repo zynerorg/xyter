@@ -1,4 +1,4 @@
-FROM golang:1.24.6 AS builder
+FROM golang:1.25.3 AS builder
 
 
 RUN useradd -m -u 10001 builder \
