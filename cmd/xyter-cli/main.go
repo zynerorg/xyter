@@ -9,8 +9,8 @@ import (
 	"net/http"
 
 	"git.zyner.org/meta/xyter/internal/bot"
-	"git.zyner.org/meta/xyter/internal/client"
 	"git.zyner.org/meta/xyter/internal/config"
+	"git.zyner.org/meta/xyter/internal/database"
 	"github.com/dromara/carbon/v2"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -18,7 +18,8 @@ import (
 
 func main() {
 	k := config.Load()
-	client := client.NewClient(k.String("apit/base-url"))
+	db := database.Open(k)
+	database.Migrate(db)
 	carbon.SetDefault(carbon.Default{
 		Layout:       carbon.DateTimeLayout,
 		Timezone:     k.String("tz"),
@@ -26,7 +27,7 @@ func main() {
 		WeekStartsAt: carbon.Monday,
 		WeekendDays:  []carbon.Weekday{carbon.Saturday, carbon.Sunday},
 	})
-	session, err := bot.Start(k, client)
+	session, err := bot.Start(k, db)
 	if err != nil {
 		log.Fatalf("Error starting bot: %v", err)
 	}

@@ -90,7 +90,7 @@ func BuildBot() error {
 
 func BuildFrontend() error {
 	CheckRoot()
-	mg.SerialDeps(InstallRust, InstallFrontendDeps)
+//	mg.SerialDeps(InstallRust, InstallFrontendDeps)
 	cmd := exec.Command("trunk", "build", "--release")
 	cmd.Env = RustEnv()
 	cmd.Dir = "frontend"

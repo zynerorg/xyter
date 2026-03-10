@@ -1,6 +1,7 @@
 package database
 
 import (
+	"log"
 	"time"
 
 	"github.com/knadh/koanf/v2"
@@ -13,137 +14,99 @@ type Guild struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	GuildMembers         []GuildMember
-	GuildSettings        *GuildSettings
-	GuildCreditsSettings *GuildCreditsSettings `gorm:"foreignKey:GuildID;references:ID"`
-	GuildQuotesSettings  *GuildQuotesSettings  `gorm:"foreignKey:GuildID;references:ID"`
-	Cooldowns            []Cooldown
-	Quotes               []Quote
+	Users    []GuildUser
+	Settings GuildSettings `gorm:"constraint:OnDelete:CASCADE"`
+	Quotes   []Quote
 }
 
 type User struct {
-	ID           string `gorm:"primaryKey"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	GuildMembers []GuildMember
-	cooldowns    []Cooldown
+	ID        string `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
-	userReputation *UserReputation `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
-	Qutoes         []Quote         `gorm:"many2many:quotes;"`
-	PostedQutoes   []Quote         `gorm:"many2many:posted_quotes;"`
+	Guilds       []GuildUser
+	Quotes       []Quote `gorm:"foreignKey:AuthorID"`
+	PostedQuotes []Quote `gorm:"foreignKey:PosterID"`
+
+	// Instead of a separate table
+	ReputationPositive int `gorm:"default:0"`
+	ReputationNegative int `gorm:"default:0"`
 }
 
-type GuildMember struct {
-	GuildID   string    `gorm:"primaryKey"`
-	UserID    string    `gorm:"primaryKey"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+type GuildUser struct {
+	GuildID string `gorm:"primaryKey"`
+	UserID  string `gorm:"primaryKey"`
 
-	Guild Guild `gorm:"foreignKey:GuildID;references:ID;constraint:OnDelete:CASCADE"`
-	User  User  `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
+	Guild *Guild `gorm:"foreignKey:GuildID;constraint:OnDelete:CASCADE"`
+	User  *User  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 
-	GuildMemberCredit *GuildMemberCredit `gorm:"foreignKey:GuildID,UserID;references:GuildID,UserID"`
+	Balance int
 
-	Cooldowns []Cooldown `gorm:"foreignKey:GuildID,UserID;references:GuildID,UserID"`
-}
-
-type GuildMemberCredit struct {
-	GuildID   string    `gorm:"primaryKey;index;index:guild_user_idx,unique;index:guild_idx;index:user_idx"`
-	UserID    string    `gorm:"primaryKey;index;index:guild_user_idx,unique;index:user_idx;index:guild_user_comp_idx"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-
-	Balance int `gorm:"default:0"`
-}
-
-type UserReputation struct {
-	UserID    string    `gorm:"primaryKey;unique"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-
-	Negative int  `gorm:"default:0"`
-	Positive int  `gorm:"default:0"`
-	User     User `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type GuildSettings struct {
-	ID        string    `gorm:"primaryKey;unique"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	GuildID string `gorm:"primaryKey"`
 
-	GuildID string `gorm:"index"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
-	GuildCreditsSettingsID *string
-	GuildCreditsSettings   *GuildCreditsSettings `gorm:"constraint:OnDelete:CASCADE;foreignKey:GuildCreditsSettingsID;references:ID"`
-
-	GuildQuotesSettingsID *string
-	GuildQuotesSettings   *GuildQuotesSettings `gorm:"foreignKey:GuildQuotesSettingsID;references:ID"`
-}
-
-type GuildCreditsSettings struct {
-	ID        string    `gorm:"primaryKey;unique"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-
-	GuildID string `gorm:"uniqueIndex"`
-
-	// Settings
-	WorkBonusChance   int `gorm:"default:30"`
-	WorkPenaltyChance int `gorm:"default:10"`
-
+	// ---- Credits settings ----
+	WorkBonusChance    int `gorm:"default:30"`
+	WorkPenaltyChance  int `gorm:"default:10"`
 	DailyBonusAmount   int `gorm:"default:25"`
 	WeeklyBonusAmount  int `gorm:"default:50"`
 	MonthlyBonusAmount int `gorm:"default:150"`
-}
 
-type GuildQuotesSettings struct {
-	ID        string    `gorm:"primaryKey;unique"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-
-	GuildID string
-
-	Status         bool `gorm:"default:false"`
-	QuoteChannelID string
+	// ---- Quotes settings ----
+	QuotesEnabled   bool `gorm:"default:false"`
+	QuotesChannelID string
 }
 
 type Quote struct {
-	ID        string    `gorm:"primaryKey;default:uuid_generate_v4()"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-
-	UserID string
-	User   User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	ID        string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	GuildID string
-	Guild   Guild `gorm:"foreignKey:GuildID;references:ID;constraint:OnDelete:CASCADE"`
+	Guild   Guild `gorm:"constraint:OnDelete:CASCADE"`
+
+	AuthorID string // The person quoted
+	Author   User   `gorm:"constraint:OnDelete:SET NULL"`
 
 	Message string
 
-	PosterUserID string
-	PosterUser   User `gorm:"foreignKey:PosterUserID;references:ID"`
+	PosterID string // The user who saved the quote
+	Poster   User   `gorm:"constraint:OnDelete:SET NULL"`
 }
 
+type CoooldownType string
+
+const (
+	CooldownTypeUser      = "user"
+	CooldownTypeGuild     = "guild"
+	CooldownTypeGuildUser = "guilduser"
+)
+
 type Cooldown struct {
-	ID        string    `gorm:"primaryKey;default:uuid_generate_v4()"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	ID        string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
-	ExpiresAt    time.Time
-	CooldownItem string
+	ExpiresAt time.Time
+	Item      string
 
-	// Optional foreign keys
 	GuildID *string
-	Guild   *Guild `gorm:"foreignKey:GuildID;references:ID;constraint:OnDelete:CASCADE"`
+	UserID  *string
 
-	UserID *string
-	User   *User `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
-
-	// Optional composite foreign key to GuildMember
+	Guild *Guild
+	User  *User
 }
 
 func Open(k *koanf.Koanf) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(k.String("database/url")), &gorm.Config{});
+	log.Println(k.String("database/url"))
+	db, err := gorm.Open(postgres.Open(k.String("database/url")), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -152,15 +115,12 @@ func Open(k *koanf.Koanf) *gorm.DB {
 
 func Migrate(db *gorm.DB) {
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+
 	db.AutoMigrate(
 		&Guild{},
-		&UserReputation{},
 		&User{},
-		&GuildMember{},
-		&GuildMemberCredit{},
+		&GuildUser{},
 		&GuildSettings{},
-		&GuildCreditsSettings{},
-		&GuildQuotesSettings{},
 		&Quote{},
 		&Cooldown{},
 	)

@@ -34,3 +34,10 @@ config.json
 main
 tools/
 build/
+
+# Nix
+.direnv
+result
+result-*
+
+*~
