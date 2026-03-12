@@ -14,7 +14,7 @@ type Guild struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Users    []GuildUser
+	Users    []GuildMember
 	Settings GuildSettings `gorm:"constraint:OnDelete:CASCADE"`
 	Quotes   []Quote
 }
@@ -24,7 +24,7 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Guilds       []GuildUser
+	Guilds       []GuildMember
 	Quotes       []Quote `gorm:"foreignKey:AuthorID"`
 	PostedQuotes []Quote `gorm:"foreignKey:PosterID"`
 
@@ -33,7 +33,7 @@ type User struct {
 	ReputationNegative int `gorm:"default:0"`
 }
 
-type GuildUser struct {
+type GuildMember struct {
 	GuildID string `gorm:"primaryKey"`
 	UserID  string `gorm:"primaryKey"`
 
@@ -84,9 +84,9 @@ type Quote struct {
 type CoooldownType string
 
 const (
-	CooldownTypeUser      = "user"
-	CooldownTypeGuild     = "guild"
-	CooldownTypeGuildUser = "guilduser"
+	CooldownTypeUser        = "user"
+	CooldownTypeGuild       = "guild"
+	CooldownTypeGuildMember = "guilduser"
 )
 
 type Cooldown struct {
@@ -104,6 +104,43 @@ type Cooldown struct {
 	User  *User
 }
 
+// Token represents an API token
+type Token struct {
+	ID        string    `gorm:"primaryKey;type:uuid"`
+	Hash      string    `gorm:"uniqueIndex;not null"`
+	ExpiresAt time.Time `gorm:"not null"`
+	Revoked   bool      `gorm:"default:false"`
+}
+
+// TokenPermission represents a direct permission assigned to a token
+type TokenPermission struct {
+	ID       string `gorm:"primaryKey;type:uuid"`
+	TokenID  string `gorm:"index;not null"`
+	Endpoint string `gorm:"not null"`
+	Method   string `gorm:"not null"`
+}
+
+// Group represents a permission group
+type Group struct {
+	ID   string `gorm:"primaryKey;type:uuid"`
+	Name string `gorm:"uniqueIndex;not null"`
+}
+
+// GroupPermission represents a permission assigned to a group
+type GroupPermission struct {
+	ID       string `gorm:"primaryKey;type:uuid"`
+	GroupID  string `gorm:"index;not null"`
+	Endpoint string `gorm:"not null"`
+	Method   string `gorm:"not null"`
+}
+
+// TokenGroup maps a token to a group
+type TokenGroup struct {
+	ID      string `gorm:"primaryKey;type:uuid"`
+	TokenID string `gorm:"index;not null"`
+	GroupID string `gorm:"index;not null"`
+}
+
 func Open(k *koanf.Koanf) *gorm.DB {
 	log.Println(k.String("database/url"))
 	db, err := gorm.Open(postgres.Open(k.String("database/url")), &gorm.Config{})
@@ -119,9 +156,14 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(
 		&Guild{},
 		&User{},
-		&GuildUser{},
+		&GuildMember{},
 		&GuildSettings{},
 		&Quote{},
 		&Cooldown{},
+		&Token{},
+		&TokenPermission{},
+		&Group{},
+		&GroupPermission{},
+		&TokenGroup{},
 	)
 }

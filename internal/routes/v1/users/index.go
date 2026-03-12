@@ -18,8 +18,6 @@ func PostHandler(c *gin.Context) {
 	}
 	db.FirstOrCreate(&u, database.User{ID: u.ID})
 	c.JSON(http.StatusOK, u)
-	return
-
 }
 func GetHandler(c *gin.Context) {
 	db := middleware.GetDB(c)
@@ -31,7 +29,6 @@ func GetHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, u)
-	return
 }
 func PutHandler(c *gin.Context) {
 	db := middleware.GetDB(c)
@@ -45,7 +42,7 @@ func PutHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
-	gu := database.GuildUser{
+	gu := database.GuildMember{
 		GuildID: body.GuildID,
 		UserID:  body.UserID,
 		Balance: body.Balance,
@@ -55,8 +52,6 @@ func PutHandler(c *gin.Context) {
 		DoUpdates: clause.AssignmentColumns([]string{"balance"}),
 	}).Create(&gu)
 	c.JSON(http.StatusOK, gu)
-	return
-
 }
 
 func Register(r *gin.RouterGroup) {

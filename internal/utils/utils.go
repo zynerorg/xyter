@@ -57,8 +57,8 @@ func Uint64Ptr(i uint64) *uint64 {
 	return &i
 }
 
-func TopUsers(db *gorm.DB, guildID string, limit int) ([]database.GuildMemberCredit, error) {
-	var topUsers []database.GuildMemberCredit
+func TopUsers(db *gorm.DB, guildID string, limit int) ([]database.GuildMember, error) {
+	var topUsers []database.GuildMember
 	err := db.Where("guild_id = ?", guildID).
 		Order("balance DESC").
 		Limit(limit).

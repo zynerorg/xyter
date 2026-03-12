@@ -24,7 +24,7 @@ var (
 )
 
 func GetBalance(db *gorm.DB, guildID, userID string) (int, error) {
-	var credit database.GuildMemberCredit
+	var credit database.GuildMember
 	err := db.First(&credit, "guild_id = ? AND user_id = ?", guildID, userID).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return 0, nil
@@ -47,7 +47,7 @@ func GiveCredits(db *gorm.DB, guildID, userID string, amount int) error {
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"balance": gorm.Expr("guild_member_credits.balance + ?", amount),
 			}),
-		}).Create(&database.GuildMemberCredit{
+		}).Create(&database.GuildMember{
 			GuildID: guildID,
 			UserID:  userID,
 			Balance: amount,
@@ -68,7 +68,7 @@ func TakeCredits(db *gorm.DB, guildID, userID string, amount int) error {
 			return err
 		}
 
-		var credit database.GuildMemberCredit
+		var credit database.GuildMember
 		if err := tx.First(&credit, "guild_id = ? AND user_id = ?", guildID, userID).Error; err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func TakeCredits(db *gorm.DB, guildID, userID string, amount int) error {
 			return err.ErrInsufficientFunds
 		}
 
-		err := tx.Model(&database.GuildMemberCredit{}).
+		err := tx.Model(&database.GuildMember{}).
 			Where("guild_id = ? AND user_id = ?", guildID, userID).
 			Update("balance", gorm.Expr("balance - ?", amount)).Error
 		if err != nil {
@@ -105,7 +105,7 @@ func SetCredits(db *gorm.DB, guildID, userID string, amount int, isBot bool) err
 			DoUpdates: clause.Assignments(map[string]interface{}{
 				"balance": amount,
 			}),
-		}).Create(&database.GuildMemberCredit{
+		}).Create(&database.GuildMember{
 			GuildID: guildID,
 			UserID:  userID,
 			Balance: amount,
@@ -127,7 +127,7 @@ func TransferCredits(db *gorm.DB, guildID, fromUserID, toUserID string, amount i
 			return err
 		}
 
-		var sender database.GuildMemberCredit
+		var sender database.GuildMember
 		if err := tx.First(&sender, "guild_id = ? AND user_id = ?", guildID, fromUserID).Error; err != nil {
 			return err
 		}
@@ -140,10 +140,10 @@ func TransferCredits(db *gorm.DB, guildID, fromUserID, toUserID string, amount i
 			return err
 		}
 
-		var recipient database.GuildMemberCredit
+		var recipient database.GuildMember
 		err := tx.First(&recipient, "guild_id = ? AND user_id = ?", guildID, toUserID).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			recipient = database.GuildMemberCredit{
+			recipient = database.GuildMember{
 				GuildID: guildID,
 				UserID:  toUserID,
 				Balance: 0,
@@ -164,13 +164,13 @@ func TransferCredits(db *gorm.DB, guildID, fromUserID, toUserID string, amount i
 			return errors.New("recipient cannot receive more credits without exceeding the maximum limit")
 		}
 
-		if err := tx.Model(&database.GuildMemberCredit{}).
+		if err := tx.Model(&database.GuildMember{}).
 			Where("guild_id = ? AND user_id = ?", guildID, fromUserID).
 			Update("balance", gorm.Expr("balance - ?", adjustedAmount)).Error; err != nil {
 			return err
 		}
 
-		err = tx.Model(&database.GuildMemberCredit{}).
+		err = tx.Model(&database.GuildMember{}).
 			Where("guild_id = ? AND user_id = ?", guildID, toUserID).
 			Update("balance", gorm.Expr("balance + ?", adjustedAmount)).Error
 		metric_transactions.WithLabelValues(guildID, "set")

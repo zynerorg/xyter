@@ -1,43 +1,40 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"net/http"
-
-	"git.zyner.org/meta/xyter/internal/bot"
-	"git.zyner.org/meta/xyter/internal/config"
-	"git.zyner.org/meta/xyter/internal/database"
-	"github.com/dromara/carbon/v2"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"git.zyner.org/meta/xyter/internal/tui/app"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	k := config.Load()
-	db := database.Open(k)
-	database.Migrate(db)
-	carbon.SetDefault(carbon.Default{
-		Layout:       carbon.DateTimeLayout,
-		Timezone:     k.String("tz"),
-		Locale:       "en",
-		WeekStartsAt: carbon.Monday,
-		WeekendDays:  []carbon.Weekday{carbon.Saturday, carbon.Sunday},
-	})
-	session, err := bot.Start(k, db)
-	if err != nil {
-		log.Fatalf("Error starting bot: %v", err)
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: myapp <command>")
+		fmt.Println("Commands: tui, save-token, show-token")
+		os.Exit(1)
 	}
-	defer session.Close()
 
-	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(":2112", nil)
+	cmd := os.Args[1]
 
-	log.Println("Bot is running. Press CTRL-C to exit.")
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-stop
+	switch cmd {
+	case "tui":
+		runTUI()
+	case "save-token":
+		// CLI logic here (later)
+		fmt.Println("CLI save-token not implemented yet")
+	case "show-token":
+		fmt.Println("CLI show-token not implemented yet")
+	default:
+		fmt.Println("Unknown command:", cmd)
+		os.Exit(1)
+	}
+}
+
+func runTUI() {
+	p := tea.NewProgram(app.NewModel(), tea.WithAltScreen())
+	if err := p.Start(); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
 }
